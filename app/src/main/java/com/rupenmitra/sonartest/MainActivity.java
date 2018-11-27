@@ -1,46 +1,41 @@
 package com.rupenmitra.sonartest;
 
 import android.app.Activity;
-import android.content.res.Resources;
 import android.media.AudioFormat;
 import android.media.AudioManager;
 import android.media.AudioTrack;
 import android.os.Handler;
-import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.widget.Button;
-import android.widget.EditText;
-import android.widget.SeekBar;
 
 public class MainActivity extends Activity {
 
-    private final int duration = 60 ; // seconds
-    private final int sampleRate = 44100;
-    private final int numSamples = duration * sampleRate;
-    private final double sample[] = new double[numSamples];
-    private final double freqOfTone = 300; // hz
-    private final byte generatedSnd[] = new byte[2 * numSamples];
-    Handler handler = new Handler();
+    private static final int DURATION = 60; // seconds
+    private static final int SAMPLE_RATE = 44100;
+    private static final int NUM_SAMPLES = DURATION * SAMPLE_RATE;
+
+    private static final double FREQ_OF_TONE = 300; // hz
+    private static final Handler HANDLER = new Handler();
 
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        System.out.println("qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq");
     }
+
     @Override
     protected void onResume() {
         super.onResume();
 
         // Use a new tread as this can take a while
         final Thread thread = new Thread(new Runnable() {
+            @Override
             public void run() {
-                genTone();
-                handler.post(new Runnable() {
-
+                final byte[] frequencyArray = genTone();
+                HANDLER.post(new Runnable() {
+                    @Override
                     public void run() {
-                        playSound();
+                        playSound(frequencyArray);
                     }
                 });
             }
@@ -48,10 +43,13 @@ public class MainActivity extends Activity {
         thread.start();
     }
 
-    void genTone(){
+    private byte[] genTone() {
+        final double sample[] = new double[NUM_SAMPLES];
+        final byte generatedSnd[] = new byte[2 * NUM_SAMPLES];
+
         // fill out the array
-        for (int i = 0; i < numSamples; ++i) {
-            sample[i] = Math.sin(2 * Math.PI * i / (sampleRate/freqOfTone));
+        for (int i = 0; i < NUM_SAMPLES; ++i) {
+            sample[i] = Math.sin(2 * Math.PI * i / (SAMPLE_RATE / FREQ_OF_TONE));
         }
 
         // convert to 16 bit pcm sound array
@@ -63,14 +61,15 @@ public class MainActivity extends Activity {
             // in 16 bit wav PCM, first byte is the low order byte
             generatedSnd[idx++] = (byte) (val & 0x00ff);
             generatedSnd[idx++] = (byte) ((val & 0xff00) >>> 8);
-
         }
+
+        return generatedSnd;
     }
 
-    void playSound(){
+    private void playSound(byte[] generatedSnd) {
         final AudioTrack audioTrack = new AudioTrack(AudioManager.STREAM_MUSIC,
-                sampleRate, AudioFormat.CHANNEL_OUT_MONO,
-                AudioFormat.ENCODING_PCM_16BIT, numSamples,
+                SAMPLE_RATE, AudioFormat.CHANNEL_OUT_MONO,
+                AudioFormat.ENCODING_PCM_16BIT, NUM_SAMPLES,
                 AudioTrack.MODE_STATIC);
         audioTrack.write(generatedSnd, 0, generatedSnd.length);
         audioTrack.play();
