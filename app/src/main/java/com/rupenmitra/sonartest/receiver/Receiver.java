@@ -3,11 +3,7 @@ package com.rupenmitra.sonartest.receiver;
 import android.media.AudioFormat;
 import android.media.AudioRecord;
 import android.media.MediaRecorder;
-import android.os.Environment;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 
@@ -30,6 +26,8 @@ public class Receiver {
             .setBufferSizeInBytes(BYTES_PER_ELEMENT * BUFFER_ELEMENTS_TO_RECORD)
             .build();
 
+    private static final AudioListener AUDIO_LISTENER = new AudioListener();
+
     private static final Thread RECORDING_THREAD = new Thread(new Runnable() {
         @Override
         public void run() {
@@ -40,6 +38,7 @@ public class Receiver {
     private static final AtomicBoolean isRecording = new AtomicBoolean(false);
 
     static {
+
         Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
             @Override
             public void run() {
@@ -60,44 +59,15 @@ public class Receiver {
         RECORDING_THREAD.start();
     }
 
-    //Conversion of short to byte
-    private static byte[] short2byte(short[] sData) {
-        int shortArraySize = sData.length;
-        byte[] bytes = new byte[shortArraySize * 2];
 
-        for (int i = 0; i < shortArraySize; i++) {
-            bytes[i * 2] = (byte) (sData[i] & 0x00FF);
-            bytes[(i * 2) + 1] = (byte) (sData[i] >> 8);
-        }
-
-        return bytes;
-    }
 
     private static void writeAudioDataToFile() {
 
-        String filePath = Environment.getExternalStorageDirectory().getPath() + "/test.wav";
+        short[] audioData = new short[BUFFER_ELEMENTS_TO_RECORD];
 
-        try {
-            File file = new File(filePath);
-            final boolean created = file.createNewFile();
-            if(!created) {
-                System.out.println("File already exists");
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-        short sData[] = new short[BUFFER_ELEMENTS_TO_RECORD];
-
-        try(FileOutputStream os = new FileOutputStream(filePath)) {
-            while (isRecording.get()) {
-                RECORDER.read(sData, 0, sData.length);
-                System.out.println("Short writing to file " + sData.length);
-                byte bData[] = short2byte(sData);
-                os.write(bData, 0, BYTES_PER_ELEMENT * BUFFER_ELEMENTS_TO_RECORD);
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
+        while (isRecording.get()) {
+            RECORDER.read(audioData, 0, audioData.length);
+            AUDIO_LISTENER.listenAudioShortStream(audioData);
         }
     }
 
