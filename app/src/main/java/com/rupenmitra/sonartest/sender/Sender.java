@@ -8,7 +8,7 @@ import android.os.Handler;
 public class Sender {
 
     private static final double FINAL_AMPLITUDE = 0.8 * 32767; // 32767 is highest positive integer for signed integer
-    private static final double FREQ_OF_TONE = 18600;
+    private static final double FREQ_OF_TONE = 300;
     private static final int DURATION = 60;
     private static final int SAMPLE_RATE = 44100; // This means one second has 44100 number of samples
     private static final int NUM_SAMPLES = DURATION * SAMPLE_RATE;
