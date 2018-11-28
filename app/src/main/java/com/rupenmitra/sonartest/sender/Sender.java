@@ -18,6 +18,11 @@ public class Sender {
 
     private static final Handler HANDLER = new Handler();
 
+    private static final AudioTrack AUDIO_TRACK = new AudioTrack(AudioManager.STREAM_MUSIC,
+            SAMPLE_RATE, AudioFormat.CHANNEL_OUT_MONO,
+            AudioFormat.ENCODING_PCM_16BIT, NUM_SAMPLES,
+            AudioTrack.MODE_STATIC);
+
     public void generateSound() {
         // Use a new tread as this can take a while
         final Thread thread = new Thread(new Runnable() {
@@ -57,11 +62,7 @@ public class Sender {
     }
 
     private void playSound(byte[] generatedSnd) {
-        final AudioTrack audioTrack = new AudioTrack(AudioManager.STREAM_MUSIC,
-                SAMPLE_RATE, AudioFormat.CHANNEL_OUT_MONO,
-                AudioFormat.ENCODING_PCM_16BIT, NUM_SAMPLES,
-                AudioTrack.MODE_STATIC);
-        audioTrack.write(generatedSnd, 0, generatedSnd.length);
-        audioTrack.play();
+        AUDIO_TRACK.write(generatedSnd, 0, generatedSnd.length);
+        AUDIO_TRACK.play();
     }
 }

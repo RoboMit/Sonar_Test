@@ -13,22 +13,21 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 public class Receiver {
 
-    private static final int RECORDER_SAMPLE_RATE = 44100;
-    private static final int BUFFER_ELEMENTS_TO_RECORD = 2048;
+    private static final int SAMPLING_FREQUENCY = 44100;
+    private static final int BUFFER_ELEMENTS_TO_RECORD = 4096;
     private static final int BYTES_PER_ELEMENT = 2;
-    private static final int TOTAL_BUFFER = BUFFER_ELEMENTS_TO_RECORD * BYTES_PER_ELEMENT;
 
-//    private static final int MIN_BUFFER_SIZE = AudioRecord.getMinBufferSize(RECORDER_SAMPLE_RATE,
-//            AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT);
+    private static final int MIN_BUFFER_SIZE = AudioRecord.getMinBufferSize(SAMPLING_FREQUENCY,
+            AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT);
 
     private static final AudioRecord RECORDER = new AudioRecord.Builder()
             .setAudioSource(MediaRecorder.AudioSource.MIC)
             .setAudioFormat(new AudioFormat.Builder()
                     .setEncoding(AudioFormat.ENCODING_PCM_16BIT)
-                    .setSampleRate(RECORDER_SAMPLE_RATE)
+                    .setSampleRate(SAMPLING_FREQUENCY)
                     .setChannelMask(AudioFormat.CHANNEL_IN_MONO)
                     .build())
-            .setBufferSizeInBytes(2 * TOTAL_BUFFER)
+            .setBufferSizeInBytes(BYTES_PER_ELEMENT * BUFFER_ELEMENTS_TO_RECORD)
             .build();
 
     private static final Thread RECORDING_THREAD = new Thread(new Runnable() {
@@ -88,14 +87,14 @@ public class Receiver {
             e.printStackTrace();
         }
 
-        short sData[] = new short[TOTAL_BUFFER];
+        short sData[] = new short[BUFFER_ELEMENTS_TO_RECORD];
 
         try(FileOutputStream os = new FileOutputStream(filePath)) {
             while (isRecording.get()) {
                 RECORDER.read(sData, 0, sData.length);
                 System.out.println("Short writing to file " + sData.length);
                 byte bData[] = short2byte(sData);
-                os.write(bData, 0, 2 * TOTAL_BUFFER);
+                os.write(bData, 0, BYTES_PER_ELEMENT * BUFFER_ELEMENTS_TO_RECORD);
             }
         } catch (IOException e) {
             e.printStackTrace();
