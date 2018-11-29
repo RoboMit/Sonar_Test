@@ -1,7 +1,9 @@
 package com.rupenmitra.sonartest.receiver;
 
 import android.os.Environment;
+import android.support.v4.content.res.TypedArrayUtils;
 
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.math3.complex.Complex;
 import org.apache.commons.math3.transform.DftNormalization;
 import org.apache.commons.math3.transform.FastFourierTransformer;
@@ -11,28 +13,34 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Deque;
+import java.util.List;
 
-class AudioListener {
+public class AudioListener {
 
-    private static final Deque<Complex[]> DEQUE = new ArrayDeque<>();
+    private static final Deque<double[]> AUDIO_STREAM = new ArrayDeque<>();
 
     public void listenAudioShortStream(short[] audioStream) {
         double[] doubles = shortsToDouble(audioStream);
-        Complex[] fourierTransform = new FastFourierTransformer(DftNormalization.STANDARD).transform(doubles, TransformType.FORWARD);
-        DEQUE.add(fourierTransform);
+        AUDIO_STREAM.add(doubles);
     }
 
     private static double[] shortsToDouble(short[] audioStream) {
         double[] doubles = new double[audioStream.length];
         for (int i = 0; i < audioStream.length; i++) {
-            doubles[i] = audioStream[i] / 32768.0;
+            doubles[i] = audioStream[i] / (32768.0 * 0.8);
         }
         return doubles;
     }
 
-    public static Deque<Complex[]> getDEQUE() {
-        return DEQUE;
+    public static Double[] getAllReceivedSample() {
+        List<Double> doubleList = new ArrayList<>();
+        while(!AUDIO_STREAM.isEmpty()) {
+            doubleList.addAll(Arrays.asList(ArrayUtils.toObject(AUDIO_STREAM.pop())));
+        }
+        return doubleList.toArray(new Double[doubleList.size()]);
     }
 
     //Conversion of short to byte

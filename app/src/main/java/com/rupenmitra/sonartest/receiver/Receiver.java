@@ -38,7 +38,6 @@ public class Receiver {
     private static final AtomicBoolean isRecording = new AtomicBoolean(false);
 
     static {
-
         Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
             @Override
             public void run() {
@@ -59,8 +58,6 @@ public class Receiver {
         RECORDING_THREAD.start();
     }
 
-
-
     private static void writeAudioDataToFile() {
 
         short[] audioData = new short[BUFFER_ELEMENTS_TO_RECORD];
@@ -71,7 +68,7 @@ public class Receiver {
         }
     }
 
-    private void stopRecording() {
+    public void stopRecording() {
         isRecording.set(false);
         RECORDER.stop();
         RECORDER.release();

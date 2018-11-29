@@ -5,23 +5,40 @@ import android.media.AudioManager;
 import android.media.AudioTrack;
 import android.os.Handler;
 
+import com.rupenmitra.sonartest.ReceiverSingleton;
+import com.rupenmitra.sonartest.SaveToFile;
+import com.rupenmitra.sonartest.receiver.AudioListener;
+import com.rupenmitra.sonartest.receiver.Receiver;
+
 public class Sender {
 
     private static final double FINAL_AMPLITUDE = 0.8 * 32767; // 32767 is highest positive integer for signed integer
-    private static final double FREQ_OF_TONE = 300;
-    private static final int DURATION = 60;
+    private static final double FREQ_OF_TONE = 18000;
+    private static final int DURATION = 30;
     private static final int SAMPLE_RATE = 44100; // This means one second has 44100 number of samples
     private static final int NUM_SAMPLES = DURATION * SAMPLE_RATE;
 
     private static final double TICKS_PER_SECOND = SAMPLE_RATE / FREQ_OF_TONE;
     private static final double MULTIPLIER = 2 * Math.PI / TICKS_PER_SECOND;
 
-    private static final Handler HANDLER = new Handler();
+    private final Handler HANDLER;
+    private final Receiver AUDIO_RECORD;
 
-    private static final AudioTrack AUDIO_TRACK = new AudioTrack(AudioManager.STREAM_MUSIC,
-            SAMPLE_RATE, AudioFormat.CHANNEL_OUT_MONO,
-            AudioFormat.ENCODING_PCM_16BIT, NUM_SAMPLES,
-            AudioTrack.MODE_STATIC);
+    private final AudioTrack AUDIO_TRACK;
+
+    public Sender() {
+        super();
+
+        AUDIO_TRACK = new AudioTrack(AudioManager.STREAM_MUSIC,
+                SAMPLE_RATE, AudioFormat.CHANNEL_OUT_MONO,
+                AudioFormat.ENCODING_PCM_16BIT, NUM_SAMPLES,
+                AudioTrack.MODE_STATIC);
+
+        AUDIO_RECORD = ReceiverSingleton.INSTANCE.getReceiver();
+
+        HANDLER = new Handler();
+
+    }
 
     public void generateSound() {
         // Use a new tread as this can take a while
@@ -31,7 +48,17 @@ public class Sender {
                 HANDLER.post(new Runnable() {
                     @Override
                     public void run() {
-                        playSound(genTone());
+                        byte[] pcmInput = genTone();
+                        AUDIO_RECORD.startRecording();
+                        playSound(pcmInput);
+                        try {
+                            Thread.sleep(DURATION * 1000);
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+                        AUDIO_TRACK.stop();
+                        AUDIO_RECORD.stopRecording();
+                        SaveToFile.saveToFile("receiveData.txt", AudioListener.getAllReceivedSample());
                     }
                 });
             }
@@ -57,6 +84,8 @@ public class Sender {
             generatedSnd[idx++] = (byte) (val & 0x00ff);
             generatedSnd[idx++] = (byte) ((val & 0xff00) >>> 8);
         }
+
+        SaveToFile.saveToFile("sendData.txt", sample);
 
         return generatedSnd;
     }
